@@ -11,6 +11,7 @@ import com.jwt.token.Entity.User;
 import com.jwt.token.Repository.UserRepository;
 import com.jwt.token.dto.LoginDto;
 import com.jwt.token.utils.ApiresponseUtils;
+import com.jwt.token.utils.EncryptionUtils;
 import com.jwt.token.utils.JwtUtils;
 import com.jwt.token.utils.Role;
 
@@ -21,29 +22,44 @@ public class UserService {
 	UserRepository repository;
 	
 	@Autowired
-	private JwtUtils jwtUtils;
+	JwtUtils jwtUtils;
 	
-	public ApiresponseUtils LogIn(LoginDto logInDto) {
-		ApiresponseUtils apiResponse=new ApiresponseUtils();
-		
-		User login=repository.findByUsernameAndPassword(logInDto.getUsername(),logInDto.getPassword());
-		
-		if(login.getId() == null) {
-			apiResponse.setData("Can't Login");
-		}
-		
-		if(login.getRole().equals(Role.admin)) {
-			List<User> entireData=repository.findAll();
-			apiResponse.setData1
-			(entireData);
-		}
-		
-		String token = jwtUtils.generateJwt(login);
+	@Autowired
+    EncryptionUtils encryptionUtils;
 
-        Map<String , Object> data = new HashMap<>();
+    public ApiresponseUtils LogIn(LoginDto logInDto) {
+        ApiresponseUtils apiResponse = new ApiresponseUtils();
+
+        User login = repository.findByUsername(logInDto.getUsername());
+
+        if (login == null || login.getId() == null) {
+            apiResponse.setData("Can't Login");
+            return apiResponse;
+        }
+
+        try {
+            String decryptedPassword = encryptionUtils.decrypt(login.getPassword());
+            if (!decryptedPassword.equals(logInDto.getPassword())) {
+                apiResponse.setData("Invalid credentials");
+                return apiResponse;
+            }
+        } catch (Exception e) {
+            apiResponse.setData("Error decrypting password: " + e.getMessage());
+            return apiResponse;
+        }
+
+        if (login.getRole().equals(Role.admin)) {
+            List<User> entireData = repository.findAll();
+            apiResponse.setData1(entireData);
+        }
+
+        String token = jwtUtils.generateJwt(login);
+
+        Map<String, Object> data = new HashMap<>();
         data.put("accessToken", token);
 
         apiResponse.setData(data);
+
         return apiResponse;
-	}
+    }
 }

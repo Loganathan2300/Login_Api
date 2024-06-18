@@ -14,10 +14,10 @@ public class EncryptionUtils {
 
 	private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES";
-    private static final String KEY = "MySecretKeyForEncryption"; // Use a secure way to store and retrieve this key
-
+    private static final String KEY = "MySecretKey12345"; // 16-byte key
+    
     private Key getKey() {
-        byte[] keyBytes = KEY.getBytes(StandardCharsets.UTF_16);
+        byte[] keyBytes = KEY.getBytes(StandardCharsets.UTF_8);
         return new SecretKeySpec(keyBytes, ALGORITHM);
     }
 
@@ -25,7 +25,7 @@ public class EncryptionUtils {
         Key key = getKey();
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         cipher.init(Cipher.ENCRYPT_MODE, key);
-        byte[] encryptedBytes = cipher.doFinal(data.getBytes(StandardCharsets.UTF_16));
+        byte[] encryptedBytes = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
         return Base64.getEncoder().encodeToString(encryptedBytes);
     }
 
@@ -34,6 +34,6 @@ public class EncryptionUtils {
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         cipher.init(Cipher.DECRYPT_MODE, key);
         byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
-        return new String(decryptedBytes, StandardCharsets.UTF_16);
+        return new String(decryptedBytes, StandardCharsets.UTF_8);
     }
 }
